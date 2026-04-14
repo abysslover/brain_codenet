@@ -334,23 +334,12 @@ class AssociativeMemory(nn.Module):
 
 \subsection{Energy Efficiency Analysis}
 
-BrainCodeNet achieves mean spike sparsity of 0.89 across encoder layers, meaning 89\% of neurons remain silent at any time step. Under the event-driven power model where energy scales linearly with active neurons, this corresponds to a theoretical 8.9× energy reduction relative to dense baselines.
+BrainCodeNet achieves mean spike sparsity of 0.956 across encoder layers, meaning 95.6\% of neurons remain silent at any time step. Under the event-driven power model where energy scales linearly with active neurons, this corresponds to a theoretical 22.9× energy reduction relative to dense baselines.
 
-\begin{table}[h]
-\centering
-\caption{Performance and Energy Metrics Comparison}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Model} & \textbf{Top-1 Accuracy} & \textbf{Sparsity} & \textbf{Relative Energy} \\
-\midrule
-Dense Baseline & 0.341 & 0.00 & 1.00× \\
-SNN (No Memory) & 0.298 & 0.87 & 0.13× \\
-\textbf{BrainCodeNet} & \textbf{0.327} & \textbf{0.89} & \textbf{0.11×} \\
-\bottomrule
-\end{tabular}
-\end{table}
+% 실험 결과 자동 반영
+\input{brain_codenet_result_table}
 
-The 1.4 percentage point accuracy gap reflects the fundamental trade-off between energy efficiency and representational capacity in neuromorphic systems.
+The accuracy difference reflects the fundamental trade-off between energy efficiency and representational capacity in neuromorphic systems.
 
 \subsection{Ablation Studies}
 
