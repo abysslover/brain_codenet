@@ -1,0 +1,42 @@
+[
+  {
+    "model": "Dense Baseline",
+    "experiment_name": "dense_baseline",
+    "total_params": 27099985,
+    "training_time": 66.39385962486267,
+    "top1_accuracy": 0.655,
+    "avg_sparsity": 0.0,
+    "energy_reduction": 1.0,
+    "val_loss": 2.262239456176758
+  },
+  {
+    "model": "BrainCodeNet",
+    "experiment_name": "braincodeNet_full",
+    "total_params": 27095381,
+    "training_time": 104.89784264564514,
+    "top1_accuracy": 0.475,
+    "avg_sparsity": 0.9562583007812501,
+    "energy_reduction": 22.86148041481088,
+    "val_loss": 2.905137939453125
+  },
+  {
+    "model": "SNN (No Memory)",
+    "experiment_name": "SNN_NoMemory",
+    "total_params": 27095381,
+    "training_time": 95.60938596725464,
+    "top1_accuracy": 0.475,
+    "avg_sparsity": 0.5200571289062501,
+    "energy_reduction": 2.0835813181703964,
+    "val_loss": 2.82986328125
+  },
+  {
+    "model": "SNN (No Energy Reg)",
+    "experiment_name": "SNN_NoEnergyReg",
+    "total_params": 27095381,
+    "training_time": 105.0884222984314,
+    "top1_accuracy": 0.475,
+    "avg_sparsity": 0.9507958984375,
+    "energy_reduction": 20.32350898084748,
+    "val_loss": 3.46681396484375
+  }
+]
