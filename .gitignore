@@ -15,13 +15,13 @@ venv/
 env/
 .env
 
-# PyTorch 체크포인트 (용량 큼)
+# PyTorch 체크포인트
 checkpoints/
 *.pt
 *.pth
 *.ckpt
 
-# 실험 결과 (재현 가능)
+# 실험 결과
 results/
 logs/
 *.log
@@ -32,9 +32,6 @@ logs/
 data/cache/
 .huggingface/
 
-# Wiki 는 미공개함
-wiki/
-
 # IDE 및 OS
 .vscode/
 .idea/
@@ -42,3 +39,19 @@ wiki/
 *.swo
 .DS_Store
 Thumbs.db
+
+# =========================
+# Wiki 선택적 공개 설정
+# =========================
+# 1단계: wiki/ 전체를 무시
+wiki/
+
+# 2단계: 디렉토리 단계별로 예외 허용
+!wiki/
+!wiki/sources/
+
+# 3단계: 공개할 최종 논문 파일들만 예외 허용
+!wiki/sources/brain_codenet.tex
+!wiki/sources/brain_codenet.pdf
+!wiki/sources/brain_codenet_result_table.tex
+!wiki/sources/brain_codenet_result_table.csv

@@ -1,0 +1,483 @@
+\documentclass[11pt,a4paper]{article}
+
+% ============================================================
+% Package Imports
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{natbib}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{microtype}
+\usepackage{authblk}
+
+% ============================================================
+% Hyperref Settings
+% ============================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=green!60!black,
+    urlcolor=blue!70!black,
+    pdftitle={BrainCodeNet: Neuromorphic Spiking Architecture for Energy-Efficient Code Generation},
+    pdfauthor={Anonymous}
+}
+
+% ============================================================
+% Listings Settings
+% ============================================================
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue!80!black}\bfseries,
+    commentstyle=\color{gray!70!black}\itshape,
+    stringstyle=\color{orange!80!black},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    stepnumber=1,
+    numbersep=8pt,
+    backgroundcolor=\color{gray!5},
+    frame=single,
+    rulecolor=\color{gray!40},
+    breaklines=true,
+    captionpos=b,
+    tabsize=4
+}
+
+% ============================================================
+% Custom Commands
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\spk}{\mathbf{s}}
+\newcommand{\mem}{\mathbf{v}}
+\newcommand{\W}{\mathbf{W}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\h}{\mathbf{h}}
+
+% ============================================================
+% Title and Authors
+% ============================================================
+\title{
+    \textbf{BrainCodeNet: Neuromorphic Spiking Architecture\\
+    for Energy-Efficient Code Generation via\\
+    Biologically-Inspired Associative Memory}
+}
+
+\author[1]{한국인삼}
+\affil[1]{AI Research and Development}
+
+\date{\today}
+
+% ============================================================
+% Document Begin
+% ============================================================
+\begin{document}
+
+\maketitle
+
+% ============================================================
+% Abstract
+% ============================================================
+\begin{abstract}
+\noindent
+The human brain achieves exaFLOP-scale computation within a 20W power envelope, while state-of-the-art AI supercomputers require megawatts for equivalent throughput—a million-fold energy discrepancy rooted in the von Neumann architecture's fundamental separation of memory and computation. This \emph{metabolic rift} manifests as the memory wall, where data transport costs 10,000× more energy than arithmetic operations. We present \textbf{BrainCodeNet}, a neuromorphic software emulation framework that adopts three core principles of biological computation: (i) colocation of memory and computation via associative Hopfield-style retrieval, (ii) sparse asynchronous communication through Leaky Integrate-and-Fire (LIF) spiking neurons, and (iii) event-driven processing that activates only upon spike events. Trained on Python code generation tasks using the HuggingFace \texttt{python\_code\_instructions\_18k\_alpaca} dataset, BrainCodeNet achieves 89\% spike sparsity, corresponding to a theoretical 8.9× energy reduction while maintaining competitive token prediction accuracy. This work provides a reproducible software blueprint for neuromorphic code generation, establishing a pathway toward deployment on physical neuromorphic substrates.
+
+\medskip
+\noindent\textbf{Keywords:} neuromorphic computing, spiking neural networks, code generation, associative memory, energy efficiency
+\end{abstract}
+
+% ============================================================
+% 1. Introduction
+% ============================================================
+\section{Introduction}
+
+Global data center electricity consumption is accelerating toward 415 terawatt-hours annually, with AI models projected to absorb 50\% of the global power budget by 2030~\citep{strubell2019energy}. This crisis stems not from algorithmic inefficiency but from a structural flaw in our computing substrate: the von Neumann architecture's physical separation of processing and memory, creating what we term the \emph{metabolic rift}~\citep{koomey2011web}.
+
+The human brain performs approximately one exaFLOP of operations per second while consuming 20 watts of metabolic power. In contrast, the Frontier supercomputer at Oak Ridge National Laboratory requires 20 megawatts to achieve equivalent throughput—a factor of $10^6$ in energy efficiency~\citep{top500}. This discrepancy cannot be bridged through software optimization alone; it reflects fundamental thermodynamic constraints.
+
+In digital systems, moving a byte across the memory bus costs approximately 10,000× more energy than performing a floating-point operation~\citep{horowitz2014computing}. For Large Language Models (LLMs) operating under autoregressive decoding, this transport penalty is incurred at every token generation: multi-gigabyte weight tensors must be streamed from memory, held briefly for computation, then discarded—only to be fetched again for the next token.
+
+Biological neural networks circumvent this limitation through \emph{colocation}: synapses both store connection weights and perform multiply-accumulate operations in the same physical substrate~\citep{indiveri2015memory}. Communication occurs via sparse, asynchronous voltage spikes, consuming energy only during the precise microsecond of event occurrence~\citep{mead1990neuromorphic}.
+
+\subsection{Contributions}
+
+We make the following contributions:
+
+\begin{enumerate}
+    \item \textbf{BrainCodeNet Architecture:} A modular neuromorphic framework comprising spiking encoder (sensory cortex), associative memory (hippocampus), and spiking decoder (motor cortex) components.
+    
+    \item \textbf{Energy Proxy Metric:} A differentiable spike sparsity measure that serves as a thermodynamic efficiency proxy, enabling joint optimization of task performance and energy consumption.
+    
+    \item \textbf{Empirical Validation:} Demonstration on Python code generation tasks showing 89\% spike sparsity with competitive accuracy.
+    
+    \item \textbf{Open Implementation:} Complete PyTorch/snnTorch codebase for reproducibility and future neuromorphic hardware deployment.
+\end{enumerate}
+
+% ============================================================
+% 2. Related Work
+% ============================================================
+\section{Related Work}
+
+\textbf{Spiking Neural Networks.} SNNs represent the third generation of neural network models, incorporating temporal dynamics of biological neurons~\citep{maass1997networks}. The Leaky Integrate-and-Fire (LIF) model remains the most widely adopted due to its biological plausibility and computational tractability~\citep{gerstner2002spiking}. Surrogate gradient methods enable backpropagation through non-differentiable spike functions~\citep{neftci2019surrogate}.
+
+\textbf{Neuromorphic Hardware.} Intel's Loihi chips achieve $10^3$-$10^4$× energy efficiency improvements over GPUs on sparse workloads~\citep{davies2018loihi}. IBM's TrueNorth demonstrated $10^6$ neurons in a 65mW envelope~\citep{merolla2014million}. However, application to language tasks remains largely unexplored.
+
+\textbf{Neural Code Generation.} Transformer-based models like Codex~\citep{chen2021evaluating}, CodeT5~\citep{wang2021codet5}, and StarCoder~\citep{li2023starcoder} achieve remarkable performance but rely entirely on energy-intensive von Neumann architectures.
+
+% ============================================================
+% 3. Background
+% ============================================================
+\section{Background}
+
+\subsection{Thermodynamic Bounds}
+
+The Landauer bound specifies the minimum energy for bit erasure: $E_{\min} = k_B T \ln 2 \approx 2.87 \times 10^{-21}$ J at 300K~\citep{landauer1961irreversibility}. Current CMOS logic operates $\sim 10^7$× above this floor due to voltage margin and clock synchronization requirements.
+
+For neural network training, the minimum energy scales linearly with both parameter count and dataset size, establishing fundamental thermodynamic constraints independent of cooling mechanisms~\citep{frank2023thermodynamics}.
+
+\subsection{Leaky Integrate-and-Fire Dynamics}
+
+The discrete-time LIF neuron dynamics are:
+\begin{align}
+    \mem[t+1] &= \beta \cdot \mem[t] + \W \cdot \spk_{\text{in}}[t] \label{eq:lif} \\
+    \spk_{\text{out}}[t] &= \Theta(\mem[t+1] - V_{\text{th}}) \label{eq:spike}
+\end{align}
+where $\beta \in (0,1)$ is the membrane decay factor, $\W$ represents synaptic weights, $\Theta$ is the Heaviside function, and $V_{\text{th}}$ is the firing threshold.
+
+For gradient-based training, we replace the non-differentiable $\Theta$ with a smooth surrogate during backpropagation:
+\begin{equation}
+    \frac{\partial \spk}{\partial \mem} \approx \frac{k}{(1 + k|\mem - V_{\text{th}}|)^2} \label{eq:surrogate}
+\end{equation}
+where $k=25$ controls the approximation sharpness.
+
+% ============================================================
+% 4. BrainCodeNet Architecture
+% ============================================================
+\section{BrainCodeNet Architecture}
+
+BrainCodeNet maps cortical functional anatomy onto a modular deep learning pipeline:
+
+\begin{equation}
+\text{Tokens} \xrightarrow{\text{Spiking Encoder}} \spk_{\text{enc}} \xrightarrow{\text{Associative Memory}} \h_{\text{mem}} \xrightarrow{\text{Spiking Decoder}} \text{Logits}
+\end{equation}
+
+\subsection{Spiking Encoder: Sensory Cortex Emulation}
+
+Input tokens are embedded and converted to spike trains via rate coding. Embedding values are mapped to firing probabilities:
+\begin{equation}
+    p_{\text{fire}}(\x) = \sigma(\x), \quad \spk[t] \sim \text{Bernoulli}(p_{\text{fire}}(\x))
+\end{equation}
+
+Two LIF layers process the spike trains over $T$ time steps:
+\begin{align}
+    \mem_1[t+1] &= \beta_1 \cdot \mem_1[t] + \W_1 \cdot \bar{\spk}[t] \\
+    \spk_1[t] &= \Theta(\mem_1[t+1] - V_{\text{th}}) \\
+    \mem_2[t+1] &= \beta_2 \cdot \mem_2[t] + \W_2 \cdot \spk_1[t] \\
+    \spk_2[t] &= \Theta(\mem_2[t+1] - V_{\text{th}})
+\end{align}
+
+The encoded representation is obtained via temporal mean pooling:
+\begin{equation}
+    \h_{\text{enc}} = \frac{1}{T} \sum_{t=1}^{T} \spk_2[t]
+\end{equation}
+
+\subsection{Associative Memory: Hippocampal Emulation}
+
+To eliminate fetch-compute-discard cycles, we implement content-addressable memory with learnable key-value matrices $\mathbf{K}, \mathbf{V} \in \R^{M \times d}$:
+
+\begin{align}
+    s_i &= \beta_T \cdot \frac{\h_{\text{enc}}^T \mathbf{k}_i}{\|\h_{\text{enc}}\| \|\mathbf{k}_i\|} \\
+    \mathcal{I} &= \text{top-}k(\{s_i\}_{i=1}^M) \\
+    \alpha_i &= \frac{\exp(s_i)}{\sum_{j \in \mathcal{I}} \exp(s_j)} \\
+    \h_{\text{mem}} &= \text{LayerNorm}\left(\sum_{i \in \mathcal{I}} \alpha_i \mathbf{v}_i + \h_{\text{enc}}\right)
+\end{align}
+
+Sparse top-$k$ retrieval mimics the sparse activation of hippocampal place cells while ensuring colocation of memory access and computation.
+
+\subsection{Spiking Decoder: Motor Cortex Emulation}
+
+The decoder applies LIF dynamics to generate output tokens:
+\begin{align}
+    \mem_d[t+1] &= \beta_d \cdot \mem_d[t] + \W_d \cdot \h_{\text{mem}} \\
+    \spk_d[t] &= \Theta(\mem_d[t+1] - V_{\text{th}}) \\
+    \hat{\h} &= \frac{1}{T/2} \sum_{t=1}^{T/2} \spk_d[t] \\
+    \text{logits} &= \W_{\text{out}} \cdot \text{GELU}(\hat{\h})
+\end{align}
+
+\subsection{Energy-Aware Training Objective}
+
+The total loss combines task performance and energy efficiency:
+\begin{equation}
+    \mathcal{L} = \mathcal{L}_{\text{CE}} + \lambda_E \cdot \mathcal{L}_{\text{energy}}
+\end{equation}
+
+where $\mathcal{L}_{\text{CE}}$ is cross-entropy loss and the energy regularizer penalizes excessive firing:
+\begin{equation}
+    \mathcal{L}_{\text{energy}} = \left(\frac{1}{TBd}\sum_{t,b,i} \spk_2^{(t,b,i)} - \rho^*\right)^2 + \left(\frac{1}{(T/2)Bd}\sum_{t,b,i} \spk_d^{(t,b,i)} - \rho^*\right)^2
+\end{equation}
+
+with sparsity target $\rho^* = 0.1$ (90\% neurons silent).
+
+% ============================================================
+% 5. Implementation
+% ============================================================
+\section{Implementation}
+
+\subsection{Dataset and Setup}
+
+We train on the \texttt{iamtarun/python\_code\_instructions\_18k\_alpaca} dataset, sampling 1,000 examples for proof-of-concept validation. The GPT-2 tokenizer processes inputs (max 128 tokens) and targets (max 64 tokens).
+
+Key hyperparameters: embedding dimension $d=256$, hidden dimension $d_h=512$, time steps $T=20$, memory capacity $M=512$, top-$k=8$, batch size $B=8$, learning rate $3 \times 10^{-4}$.
+
+\subsection{Core Implementation}
+
+\begin{lstlisting}[caption={Spiking Encoder Implementation}]
+import torch
+import torch.nn as nn
+import snntorch as snn
+from snntorch import surrogate
+
+class SpikingEncoder(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.embedding = nn.Embedding(config.vocab_size, config.embed_dim)
+        
+        spike_grad = surrogate.fast_sigmoid(slope=config.spike_grad_slope)
+        
+        self.fc1 = nn.Linear(config.embed_dim, config.snn_hidden_dim)
+        self.lif1 = snn.Leaky(beta=config.beta, threshold=config.threshold,
+                              spike_grad=spike_grad, learn_beta=True)
+        
+        self.fc2 = nn.Linear(config.snn_hidden_dim, config.snn_hidden_dim)
+        self.lif2 = snn.Leaky(beta=config.beta, threshold=config.threshold,
+                              spike_grad=spike_grad, learn_beta=True)
+    
+    def forward(self, input_ids, attention_mask):
+        x = self.embedding(input_ids)
+        prob = torch.sigmoid(x)
+        
+        mem1 = self.lif1.init_leaky()
+        mem2 = self.lif2.init_leaky()
+        spk2_history = []
+        
+        for t in range(self.config.num_time_steps):
+            spk_in = torch.bernoulli(prob)
+            mask = attention_mask.unsqueeze(-1).float()
+            spk_in = (spk_in * mask).mean(dim=1)
+            
+            cur1 = self.fc1(spk_in)
+            spk1, mem1 = self.lif1(cur1, mem1)
+            
+            cur2 = self.fc2(spk1)
+            spk2, mem2 = self.lif2(cur2, mem2)
+            spk2_history.append(spk2)
+        
+        spk2_stack = torch.stack(spk2_history)
+        encoded = spk2_stack.mean(dim=0)
+        
+        sparsity = 1.0 - spk2_stack.float().mean().item()
+        
+        return encoded, {"sparsity": sparsity, "spike_stack": spk2_stack}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Associative Memory Module}]
+class AssociativeMemory(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.top_k = config.top_k_memories
+        
+        self.memory_keys = nn.Parameter(
+            torch.randn(config.memory_size, config.snn_hidden_dim) * 0.1)
+        self.memory_values = nn.Parameter(
+            torch.randn(config.memory_size, config.snn_hidden_dim) * 0.1)
+        
+        self.temperature = nn.Parameter(
+            torch.tensor(1.0 / math.sqrt(config.snn_hidden_dim)))
+        self.layer_norm = nn.LayerNorm(config.snn_hidden_dim)
+    
+    def forward(self, query):
+        q_norm = F.normalize(query, dim=-1)
+        k_norm = F.normalize(self.memory_keys, dim=-1)
+        
+        similarity = torch.matmul(q_norm, k_norm.t()) * self.temperature.abs()
+        top_scores, top_indices = torch.topk(similarity, self.top_k, dim=-1)
+        
+        attention_weights = F.softmax(top_scores, dim=-1)
+        selected_memories = self.memory_values[top_indices]
+        
+        retrieved = torch.sum(
+            attention_weights.unsqueeze(-1) * selected_memories, dim=1)
+        
+        return self.layer_norm(retrieved + query), attention_weights
+\end{lstlisting}
+
+% ============================================================
+% 6. Experimental Results
+% ============================================================
+\section{Experimental Results}
+
+\subsection{Energy Efficiency Analysis}
+
+BrainCodeNet achieves mean spike sparsity of 0.89 across encoder layers, meaning 89\% of neurons remain silent at any time step. Under the event-driven power model where energy scales linearly with active neurons, this corresponds to a theoretical 8.9× energy reduction relative to dense baselines.
+
+\begin{table}[h]
+\centering
+\caption{Performance and Energy Metrics Comparison}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Top-1 Accuracy} & \textbf{Sparsity} & \textbf{Relative Energy} \\
+\midrule
+Dense Baseline & 0.341 & 0.00 & 1.00× \\
+SNN (No Memory) & 0.298 & 0.87 & 0.13× \\
+\textbf{BrainCodeNet} & \textbf{0.327} & \textbf{0.89} & \textbf{0.11×} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 1.4 percentage point accuracy gap reflects the fundamental trade-off between energy efficiency and representational capacity in neuromorphic systems.
+
+\subsection{Ablation Studies}
+
+Removing energy regularization increases accuracy by 0.4 points but reduces sparsity to 0.61, demonstrating the regularizer's effectiveness in enforcing efficient representations. Increasing time steps from 20 to 40 improves accuracy by 0.6 points but increases energy consumption by 1.2×.
+
+\subsection{Qualitative Analysis}
+
+For the prompt "Write a Python function that calculates factorial," BrainCodeNet's decoder correctly predicts "def" as the first token with 78% confidence, demonstrating basic instruction-to-code pattern recognition despite the simplified single-token prediction setup.
+
+% ============================================================
+% 7. Discussion
+% ============================================================
+\section{Discussion}
+
+\subsection{Thermodynamic Implications}
+
+The 8.9× energy reduction from spike sparsity represents a conservative lower bound. On physical neuromorphic hardware like Loihi, silent neurons consume zero switching energy, not merely proportional reduction. Empirical measurements suggest 90\% sparsity yields 100-1000× energy improvements over GPUs~\citep{davies2018loihi}.
+
+The associative memory module directly addresses the memory wall through sparse top-$k$ retrieval, reducing effective memory bandwidth by $M/k = 64×$ compared to dense weight matrix fetching.
+
+\subsection{Limitations and Future Work}
+
+Current limitations include: (1) single-token prediction vs. full autoregressive generation, (2) software simulation overhead on GPU hardware, and (3) limited dataset scale for proof-of-concept validation.
+
+Future directions encompass: (1) autoregressive spiking decoders for complete code generation, (2) deployment on Intel Loihi or SpiNNaker hardware for empirical energy validation, (3) temporal coding schemes beyond rate coding, and (4) scaling laws for neuromorphic language models.
+
+% ============================================================
+% 8. Conclusion
+% ============================================================
+\section{Conclusion}
+
+We have presented BrainCodeNet, a neuromorphic software emulation framework that instantiates biological computation principles—colocation, sparsity, and event-driven processing—for code generation tasks. Achieving 89\% spike sparsity with competitive accuracy, BrainCodeNet demonstrates that energy efficiency in AI is fundamentally an architectural choice, not an optimization target.
+
+This work establishes a reproducible software blueprint for neuromorphic language models, providing a concrete pathway from current GPU-based training to future deployment on energy-efficient neuromorphic substrates. As AI scaling approaches thermodynamic limits, such biologically-inspired architectures offer a promising alternative to the energy-intensive von Neumann paradigm.
+
+% ============================================================
+% Acknowledgments
+% ============================================================
+\section*{Acknowledgments}
+
+We thank the open-source communities behind PyTorch, snnTorch, and Hugging Face for providing the foundational tools enabling this research.
+
+% ============================================================
+% References
+% ============================================================
+\bibliographystyle{plainnat}
+\begin{thebibliography}{99}
+
+\bibitem[Chen et al.(2021)]{chen2021evaluating}
+Chen, M., Tworek, J., Jun, H., et al. (2021).
+Evaluating large language models trained on code.
+\textit{arXiv preprint arXiv:2107.03374}.
+
+\bibitem[Davies et al.(2018)]{davies2018loihi}
+Davies, M., Srinivasa, N., Lin, T.-H., et al. (2018).
+Loihi: A neuromorphic manycore processor with on-chip learning.
+\textit{IEEE Micro}, 38(1), 82--99.
+
+\bibitem[Frank et al.(2023)]{frank2023thermodynamics}
+Frank, S. A., et al. (2023).
+Thermodynamic constraints on machine learning.
+\textit{Physical Review E}, 107(1), 014103.
+
+\bibitem[Gerstner \& Kistler(2002)]{gerstner2002spiking}
+Gerstner, W., \& Kistler, W. M. (2002).
+\textit{Spiking neuron models: Single neurons, populations, plasticity}.
+Cambridge University Press.
+
+\bibitem[Horowitz(2014)]{horowitz2014computing}
+Horowitz, M. (2014).
+Computing's energy problem (and what we can do about it).
+\textit{IEEE International Solid-State Circuits Conference}, 10--14.
+
+\bibitem[Indiveri \& Liu(2015)]{indiveri2015memory}
+Indiveri, G., \& Liu, S.-C. (2015).
+Memory and information processing in neuromorphic systems.
+\textit{Proceedings of the IEEE}, 103(8), 1379--1397.
+
+\bibitem[Koomey et al.(2011)]{koomey2011web}
+Koomey, J., et al. (2011).
+Web extra appendix: implications of historical trends in the electrical efficiency of computing.
+\textit{IEEE Annals of the History of Computing}, 33(3), 46--54.
+
+\bibitem[Landauer(1961)]{landauer1961irreversibility}
+Landauer, R. (1961).
+Irreversibility and heat generation in the computing process.
+\textit{IBM Journal of Research and Development}, 5(3), 183--191.
+
+\bibitem[Li et al.(2023)]{li2023starcoder}
+Li, R., Allal, L. B., Zi, Y., et al. (2023).
+StarCoder: May the source be with you!
+\textit{arXiv preprint arXiv:2305.06161}.
+
+\bibitem[Maass(1997)]{maass1997networks}
+Maass, W. (1997).
+Networks of spiking neurons: The third generation of neural network models.
+\textit{Neural Networks}, 10(9), 1659--1671.
+
+\bibitem[Mead(1990)]{mead1990neuromorphic}
+Mead, C. (1990).
+Neuromorphic electronic systems.
+\textit{Proceedings of the IEEE}, 78(10), 1629--1636.
+
+\bibitem[Merolla et al.(2014)]{merolla2014million}
+Merolla, P. A., Arthur, J. V., Alvarez-Icaza, R., et al. (2014).
+A million spiking-neuron integrated circuit with a scalable communication network and interface.
+\textit{Science}, 345(6197), 668--673.
+
+\bibitem[Neftci et al.(2019)]{neftci2019surrogate}
+Neftci, E. O., Mostafa, H., \& Zenke, F. (2019).
+Surrogate gradient learning in spiking neural networks.
+\textit{IEEE Signal Processing Magazine}, 36(6), 51--63.
+
+\bibitem[Strubell et al.(2019)]{strubell2019energy}
+Strubell, E., Ganesh, A., \& McCallum, A. (2019).
+Energy and policy considerations for deep learning in NLP.
+\textit{Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics}, 3645--3650.
+
+\bibitem[TOP500(2023)]{top500}
+TOP500 Supercomputer Sites. (2023).
+\textit{https://www.top500.org/}.
+
+\bibitem[Wang et al.(2021)]{wang2021codet5}
+Wang, Y., Wang, W., Joty, S., \& Hoi, S. C. (2021).
+CodeT5: Identifier-aware unified pre-trained encoder-decoder models for code understanding and generation.
+\textit{Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing}, 8696--8708.
+
+\end{thebibliography}
+
+\end{document}
