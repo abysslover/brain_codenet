@@ -50,6 +50,7 @@ Research papers and documentation summaries.
 
 - [[wiki/sources/brain-emulation-paper|Brain Emulation Research]] - Core research foundations
 - [[wiki/sources/brain-codenet-paper|BrainCodeNet Architecture]] - Neuromorphic spiking architecture for code generation
+- [[wiki/sources/experiment-reproducibility-guide|Experiment Reproducibility Guide]] - Complete guide for reproducing experiments
 
 ---
 
@@ -95,9 +96,9 @@ Track wiki evolution and recent changes.
 |----------|-------|-------------|
 | Concepts | 7 | Core principles and theories |
 | Entities | 5 | Implementation components |
-| Sources | 2 | Research paper summaries |
+| Sources | 3 | Research papers and guides |
 | Syntheses | 2 | Integrated analyses |
-| **Total** | **16** | Active wiki pages |
+| **Total** | **17** | Active wiki pages |
 
 ---
 

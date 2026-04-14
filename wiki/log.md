@@ -107,4 +107,24 @@ Chronological record of wiki operations, organized by date and type.
 
 ---
 
+## [2026-04-15] ingest | Experiment Reproducibility Guide
+
+- **Source**: Complete experiment pipeline executed on py312 conda environment with RTX A6000 GPU
+- **Summary**: Documented full experimental workflow including environment setup, execution, results, and paper integration
+- **Created Pages**:
+  - wiki/sources/experiment-reproducibility-guide.md
+  - wiki/sources/brain_codenet_result_table.tex
+  - wiki/sources/brain_codenet_result_table.csv
+  - wiki/sources/all_results.json
+- **Key Results**:
+  - Dense Baseline: 65.5% Top-1 accuracy, 0% sparsity
+  - BrainCodeNet: 47.5% Top-1 accuracy, 95.6% sparsity, 22.9× energy reduction
+  - Ablation studies demonstrate memory module impact on sparsity
+- **Updated Pages**:
+  - wiki/index.md - Added new source, updated statistics
+  - wiki/sources/brain_codenet.tex - Integrated auto-generated table
+- **Execution Time**: ~1.5 hours on RTX A6000 GPU, ~13+ hours on CPU
+
+---
+
 *Add new entries following the format above. Use prefixes: ingest, query, lint, update*
